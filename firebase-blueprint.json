@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "SecretGroup": {
+      "title": "SecretGroup",
+      "description": "A secret santa draw group with participants, exclusions and settings",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique group identifier"
+        },
+        "adminKey": {
+          "type": "string",
+          "description": "Secret key for group administrator"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the secret santa group"
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional notes or event rules"
+        },
+        "minPrice": {
+          "type": "number",
+          "description": "Minimum suggested gift price in BRL"
+        },
+        "maxPrice": {
+          "type": "number",
+          "description": "Maximum suggested gift price in BRL"
+        },
+        "eventDate": {
+          "type": "string",
+          "description": "Date of gift exchange"
+        },
+        "eventTime": {
+          "type": "string",
+          "description": "Time of gift exchange"
+        },
+        "eventLocation": {
+          "type": "string",
+          "description": "Location of gift exchange"
+        },
+        "participants": {
+          "type": "array",
+          "description": "List of group participants with drawn targets"
+        },
+        "exclusions": {
+          "type": "array",
+          "description": "List of forbidden pairing rules"
+        },
+        "pendingRequests": {
+          "type": "array",
+          "description": "Pending requests from people whose name was not on the list"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the group (draft or drawn)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation ISO timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update ISO timestamp"
+        }
+      },
+      "required": ["id", "title", "participants"]
+    }
+  },
+  "firestore": {
+    "/groups/{groupId}": {
+      "schema": "SecretGroup",
+      "description": "Secret santa group document identified by groupId"
+    }
+  }
+}

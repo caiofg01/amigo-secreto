@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128;
+    }
+
+    function isValidGroup(data) {
+      return data.keys().hasAll(['id', 'title', 'participants'])
+        && data.id is string
+        && data.id.size() <= 128
+        && data.title is string
+        && data.title.size() <= 200
+        && data.participants is list
+        && data.participants.size() <= 200;
+    }
+
+    // Groups collection
+    match /groups/{groupId} {
+      allow get: if isValidId(groupId);
+      allow create: if isValidId(groupId) && isValidGroup(request.resource.data);
+      allow update: if isValidId(groupId) && isValidGroup(request.resource.data);
+      allow delete: if false;
+    }
+  }
+}

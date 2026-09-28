@@ -1,0 +1,8 @@
+{
+  "name": "Amigo Secreto Online",
+  "description": "Plataforma fácil e rápida para sorteio de amigo secreto com restrições de pares, valores de presentes e link exclusivo para participantes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
