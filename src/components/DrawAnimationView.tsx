@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { Sparkles, Eye, EyeOff, Gift, Calendar, MapPin, DollarSign, Send, CheckCircle2, RotateCcw, ArrowLeft, Heart } from 'lucide-react';
+import { Sparkles, Eye, EyeOff, Gift, Calendar, MapPin, DollarSign, Send, CheckCircle2, RotateCcw, Heart, Lock, Copy, Check } from 'lucide-react';
 import { SecretGroup, Participant } from '../types';
 import { formatBRL, formatBRDate } from '../utils/secretSanta';
 import { playTick, playGiftShakeSound, playCelebrationFanfare, playClickSound } from '../utils/soundEffects';
@@ -10,7 +10,7 @@ interface DrawAnimationViewProps {
   group: SecretGroup;
   currentParticipant: Participant;
   targetParticipant: Participant;
-  onBackToParticipants: () => void;
+  onBackToParticipants?: () => void;
 }
 
 type AnimationStage = 'shuffling' | 'ready_to_open' | 'revealed';
@@ -19,13 +19,13 @@ export const DrawAnimationView: React.FC<DrawAnimationViewProps> = ({
   group,
   currentParticipant,
   targetParticipant,
-  onBackToParticipants,
 }) => {
   const [stage, setStage] = useState<AnimationStage>('shuffling');
   const [displayedName, setDisplayedName] = useState<string>('Sorteando...');
   const [isNameHidden, setIsNameHidden] = useState<boolean>(false);
   const [wishlistText, setWishlistText] = useState<string>(currentParticipant.wishlist || '');
   const [wishlistSaved, setWishlistSaved] = useState<boolean>(false);
+  const [copiedTargetName, setCopiedTargetName] = useState<boolean>(false);
   const hasTriggeredConfetti = useRef<boolean>(false);
 
   // Stage 1: Fast shuffling names animation with tick audio
@@ -105,17 +105,16 @@ export const DrawAnimationView: React.FC<DrawAnimationViewProps> = ({
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 py-8">
-      {/* Return button */}
-      <button
-        onClick={() => {
-          playClickSound();
-          onBackToParticipants();
-        }}
-        className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white mb-6 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        <span>Voltar para a lista do grupo</span>
-      </button>
+      {/* Privacy badge */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-[11px] font-semibold text-slate-300">
+          <Lock className="w-3.5 h-3.5 text-amber-400" />
+          <span>Sorteio Individual Confidencial</span>
+        </div>
+        <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+          Guarde este resultado em segredo 🤫
+        </span>
+      </div>
 
       {/* Main Animation Box */}
       <div className="bg-[#111A2E] border border-amber-500/20 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden text-center">
@@ -335,7 +334,7 @@ export const DrawAnimationView: React.FC<DrawAnimationViewProps> = ({
                     playClickSound();
                     triggerConfettiExplosion();
                   }}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-1.5"
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-1.5 border border-slate-700"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                   <span>Soltar confetes 🎉</span>
@@ -345,12 +344,29 @@ export const DrawAnimationView: React.FC<DrawAnimationViewProps> = ({
                   type="button"
                   onClick={() => {
                     playClickSound();
-                    onBackToParticipants();
+                    navigator.clipboard.writeText(targetParticipant.name);
+                    setCopiedTargetName(true);
+                    setTimeout(() => setCopiedTargetName(false), 2500);
                   }}
-                  className="px-4 py-2 rounded-xl border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white text-xs font-medium transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm"
                 >
-                  Voltar para lista do grupo
+                  {copiedTargetName ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-slate-950" />
+                      <span>Nome Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-slate-950" />
+                      <span>Copiar Nome do Amigo</span>
+                    </>
+                  )}
                 </button>
+
+                <p className="w-full text-center text-[11px] text-slate-400 mt-2 flex items-center justify-center gap-1">
+                  <Lock className="w-3 h-3 text-amber-400" />
+                  <span>Para manter o sigilo, você só tem acesso ao seu amigo sorteado. Guarde este segredo!</span>
+                </p>
               </div>
             </div>
           )}

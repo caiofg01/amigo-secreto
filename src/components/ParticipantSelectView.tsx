@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Search, UserX, Gift, Calendar, MapPin, DollarSign, CheckCircle2, MessageCircle, AlertCircle, Share2, Sparkles, ExternalLink } from 'lucide-react';
+import { User, Search, UserX, Gift, Calendar, MapPin, DollarSign, CheckCircle2, MessageCircle, AlertCircle, Share2, Sparkles, ExternalLink, Lock, ShieldCheck, KeyRound } from 'lucide-react';
 import { SecretGroup, Participant } from '../types';
 import { formatBRL, formatBRDate } from '../utils/secretSanta';
 import { playClickSound } from '../utils/soundEffects';
@@ -20,6 +20,11 @@ export const ParticipantSelectView: React.FC<ParticipantSelectViewProps> = ({
   const [search, setSearch] = useState('');
   const [selectedCandidate, setSelectedCandidate] = useState<Participant | null>(null);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+
+  // Admin password verification modal state
+  const [isAdminPasswordModalOpen, setIsAdminPasswordModalOpen] = useState(false);
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [adminPasswordError, setAdminPasswordError] = useState<string | null>(null);
 
   // "Meu nome não está aqui" modal state
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -49,6 +54,32 @@ export const ParticipantSelectView: React.FC<ParticipantSelectViewProps> = ({
   const handleWrongName = () => {
     setIsConfirmationOpen(false);
     setSelectedCandidate(null);
+  };
+
+  const handleOpenAdminPasswordModal = () => {
+    playClickSound();
+    setAdminPasswordInput('');
+    setAdminPasswordError(null);
+    setIsAdminPasswordModalOpen(true);
+  };
+
+  const handleVerifyAdminPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    const input = adminPasswordInput.trim();
+    const correctPassword = group.adminPassword || group.adminKey;
+
+    if (!input) {
+      setAdminPasswordError('Por favor, informe a senha do administrador.');
+      return;
+    }
+
+    if (input === correctPassword || input === group.adminKey) {
+      playClickSound();
+      setIsAdminPasswordModalOpen(false);
+      onGoToAdmin();
+    } else {
+      setAdminPasswordError('Senha incorreta! Apenas o criador do sorteio pode acessar este painel.');
+    }
   };
 
   const handleSubmitInclusionRequest = async (e: React.FormEvent) => {
@@ -94,13 +125,11 @@ export const ParticipantSelectView: React.FC<ParticipantSelectViewProps> = ({
           {/* Organizer shortcut button */}
           <div className="shrink-0">
             <button
-              onClick={() => {
-                playClickSound();
-                onGoToAdmin();
-              }}
-              className="text-xs font-medium text-slate-400 hover:text-amber-300 underline underline-offset-4 transition-colors"
+              onClick={handleOpenAdminPasswordModal}
+              className="text-xs font-medium text-slate-400 hover:text-amber-300 underline underline-offset-4 transition-colors flex items-center gap-1.5"
             >
-              É o administrador deste grupo?
+              <Lock className="w-3.5 h-3.5 text-amber-400/80" />
+              <span>É o administrador deste grupo?</span>
             </button>
           </div>
         </div>
@@ -376,6 +405,76 @@ export const ParticipantSelectView: React.FC<ParticipantSelectViewProps> = ({
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Admin Password Verification Modal */}
+      {isAdminPasswordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#111A2E] border border-amber-500/30 rounded-3xl max-w-md w-full p-6 sm:p-8 text-slate-100 shadow-2xl relative">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white font-display">
+                  Acesso de Administrador
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {group.title}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 mb-4 leading-relaxed">
+              O painel de controle e o gabarito do sorteio são protegidos. Digite a senha definida pelo organizador ao criar o grupo:
+            </p>
+
+            <form onSubmit={handleVerifyAdminPassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Senha do Administrador:
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    autoFocus
+                    value={adminPasswordInput}
+                    onChange={(e) => {
+                      setAdminPasswordInput(e.target.value);
+                      if (adminPasswordError) setAdminPasswordError(null);
+                    }}
+                    placeholder="Digite a senha..."
+                    className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none tracking-widest font-mono"
+                  />
+                  <KeyRound className="w-4 h-4 text-slate-500 absolute right-3.5 top-3 pointer-events-none" />
+                </div>
+                {adminPasswordError && (
+                  <p className="text-xs text-rose-400 mt-2 flex items-center gap-1.5 animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{adminPasswordError}</span>
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAdminPasswordModalOpen(false)}
+                  className="flex-1 py-2.5 px-4 rounded-xl border border-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20"
+                >
+                  <ShieldCheck className="w-4 h-4 text-slate-950" />
+                  <span>Entrar no Painel</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

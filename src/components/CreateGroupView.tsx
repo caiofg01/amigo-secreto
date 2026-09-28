@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Gift, Plus, Trash2, Users, DollarSign, Calendar, MapPin, AlertCircle, Ban, Sparkles, CheckCircle2, ClipboardPaste, ArrowRight } from 'lucide-react';
+import { Gift, Plus, Trash2, Users, DollarSign, Calendar, MapPin, AlertCircle, Ban, Sparkles, CheckCircle2, ClipboardPaste, ArrowRight, Lock, ShieldCheck, Key } from 'lucide-react';
 import { SecretGroup, Participant, ExclusionRule } from '../types';
 import { performSecretSantaDraw, formatBRL } from '../utils/secretSanta';
 import { playClickSound } from '../utils/soundEffects';
@@ -18,6 +18,7 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({ onGroupCreated
   const [eventDate, setEventDate] = useState('');
   const [eventTime, setEventTime] = useState('');
   const [eventLocation, setEventLocation] = useState('');
+  const [adminPassword, setAdminPassword] = useState('1234');
 
   // Participants
   const [participantInput, setParticipantInput] = useState('');
@@ -191,10 +192,12 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({ onGroupCreated
 
     const groupId = `grp_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`;
     const adminKey = `adm_${Math.random().toString(36).substring(2, 10)}`;
+    const finalPassword = adminPassword.trim() || '1234';
 
     const newGroup: SecretGroup = {
       id: groupId,
       adminKey,
+      adminPassword: finalPassword,
       title: title.trim(),
       description: description.trim() || undefined,
       minPrice: minNum,
@@ -564,7 +567,59 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({ onGroupCreated
           )}
         </div>
 
-        {/* 4. Action CTA */}
+        {/* 4. Admin Security Password */}
+        <div className="bg-[#111A2E] border border-amber-500/20 rounded-3xl p-6 sm:p-8 shadow-xl">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-white font-display flex items-center gap-2">
+                <span>Senha do Administrador</span>
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Proteção Ativa
+                </span>
+              </h2>
+              <p className="text-xs text-slate-400">
+                Apenas quem souber essa senha poderá entrar no painel para ver o gabarito do sorteio.
+              </p>
+            </div>
+          </div>
+
+          <div className="max-w-md">
+            <label className="block text-xs font-semibold text-slate-300 mb-2">
+              Defina a senha do organizador:
+            </label>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="Ex: 1234 ou natal2026"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 tracking-wider font-semibold font-mono"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  playClickSound();
+                  setAdminPassword(Math.floor(1000 + Math.random() * 9000).toString());
+                }}
+                className="px-3 py-2.5 rounded-xl border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white text-xs font-medium transition-colors shrink-0"
+                title="Gerar código aleatório"
+              >
+                Gerar PIN
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>Participantes que receberem o link não conseguirão ver quem tirou quem sem esta senha.</span>
+            </p>
+          </div>
+        </div>
+
+        {/* 5. Action CTA */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
           <p className="text-xs text-slate-400 text-center sm:text-left">
             Ao realizar o sorteio, um link exclusivo será gerado para você compartilhar com os participantes.

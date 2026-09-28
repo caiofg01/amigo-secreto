@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Share2, Copy, Check, MessageCircle, Users, Eye, EyeOff, Sparkles, Gift, AlertCircle, Calendar, MapPin, DollarSign, UserPlus, Trash2, ArrowLeft, ShieldAlert, CheckCircle2, UserCheck, RefreshCw } from 'lucide-react';
+import { Share2, Copy, Check, MessageCircle, Users, Eye, EyeOff, Sparkles, Gift, AlertCircle, Calendar, MapPin, DollarSign, UserPlus, Trash2, ArrowLeft, ShieldAlert, CheckCircle2, UserCheck, RefreshCw, Lock, Link as LinkIcon, Search, KeyRound, ShieldCheck } from 'lucide-react';
 import { SecretGroup, Participant, PendingRequest } from '../types';
 import { formatBRL, formatBRDate, performSecretSantaDraw } from '../utils/secretSanta';
 import { playClickSound } from '../utils/soundEffects';
@@ -19,6 +19,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onBackToHome,
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedAdminPassword, setCopiedAdminPassword] = useState(false);
+  const [copiedParticipantId, setCopiedParticipantId] = useState<string | null>(null);
+  const [shareMode, setShareMode] = useState<'general' | 'individual'>('general');
+  const [individualSearch, setIndividualSearch] = useState('');
   const [showFullAnswers, setShowFullAnswers] = useState(false);
   const [confirmUnlockAnswers, setConfirmUnlockAnswers] = useState(false);
   const [isRedrawing, setIsRedrawing] = useState(false);
@@ -35,11 +39,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Clean, short link for participants powered by Firebase Firestore
   const participantUrl = `${window.location.origin}${window.location.pathname}?grupo=${group.id}`;
 
+  const getIndividualUrl = (participantId: string) => {
+    return `${window.location.origin}${window.location.pathname}?grupo=${group.id}&p=${participantId}`;
+  };
+
   const handleCopyLink = () => {
     playClickSound();
     navigator.clipboard.writeText(participantUrl).then(() => {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2500);
+    });
+  };
+
+  const handleCopyIndividualLink = (p: Participant) => {
+    playClickSound();
+    const url = getIndividualUrl(p.id);
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedParticipantId(p.id);
+      setTimeout(() => setCopiedParticipantId(null), 2500);
+    });
+  };
+
+  const handleCopyAdminPassword = () => {
+    playClickSound();
+    const pwd = group.adminPassword || group.adminKey || '1234';
+    navigator.clipboard.writeText(pwd).then(() => {
+      setCopiedAdminPassword(true);
+      setTimeout(() => setCopiedAdminPassword(false), 2500);
     });
   };
 
@@ -226,6 +252,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </span>
               )}
             </div>
+
+            {/* Admin Password protection badge */}
+            <div className="mt-4 inline-flex items-center gap-2.5 p-2 px-3 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300">
+              <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>Senha do Administrador:</span>
+              <strong className="text-amber-300 font-mono tracking-wider text-sm bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                {group.adminPassword || group.adminKey || '1234'}
+              </strong>
+              <button
+                type="button"
+                onClick={handleCopyAdminPassword}
+                className="text-[11px] text-slate-400 hover:text-white underline underline-offset-2 flex items-center gap-1 ml-1"
+                title="Copiar senha"
+              >
+                {copiedAdminPassword ? (
+                  <span className="text-emerald-400 font-medium">Copiada!</span>
+                ) : (
+                  <span>Copiar senha</span>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Status Metric summary */}
@@ -259,53 +306,203 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         </div>
 
-        {/* Share Section: Exclusive Link for participants */}
+        {/* Share Section with Tab Options */}
         <div className="mt-8 pt-6 border-t border-slate-800">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Share2 className="w-4 h-4 text-amber-400" />
-                <span>Link exclusivo para enviar aos participantes (sem cadastro)</span>
+                <span>Como deseja compartilhar com os participantes?</span>
               </h3>
               <p className="text-xs text-slate-400">
-                Os participantes acessam este link e selecionam seus nomes na lista.
+                Escolha entre enviar um único link no grupo ou enviar um link individual e exclusivo para cada pessoa.
               </p>
             </div>
-          </div>
 
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 font-mono select-all truncate flex items-center">
-              {participantUrl}
+            {/* Mode switch pills */}
+            <div className="inline-flex p-1 rounded-xl bg-slate-950 border border-slate-800 shrink-0 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  playClickSound();
+                  setShareMode('general');
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                  shareMode === 'general'
+                    ? 'bg-amber-400 text-slate-950 shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Link Geral (Grupo)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  playClickSound();
+                  setShareMode('individual');
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                  shareMode === 'individual'
+                    ? 'bg-amber-400 text-slate-950 shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <LinkIcon className="w-3.5 h-3.5" />
+                <span>Links Individuais (1 por pessoa)</span>
+              </button>
             </div>
-
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-colors shrink-0 shadow-sm"
-            >
-              {copiedLink ? (
-                <>
-                  <Check className="w-4 h-4 text-slate-950" />
-                  <span>Link Copiado!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4 text-slate-950" />
-                  <span>Copiar Link</span>
-                </>
-              )}
-            </button>
-
-            <a
-              href={`https://api.whatsapp.com/send?text=${whatsappMessage}`}
-              target="_blank"
-              rel="noreferrer"
-              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors shrink-0 shadow-sm"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span>Enviar no WhatsApp</span>
-            </a>
           </div>
+
+          {/* TAB 1: General Group Link */}
+          {shareMode === 'general' && (
+            <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 sm:p-5">
+              <p className="text-xs text-slate-300 mb-3 leading-relaxed">
+                👉 <strong>Link Geral:</strong> Mande este link único no grupo de WhatsApp da família ou amigos. Ao abrir, cada participante clica no seu próprio nome na lista (a tela de administrador é protegida pela senha).
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 font-mono select-all truncate flex items-center">
+                  {participantUrl}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-colors shrink-0 shadow-sm"
+                >
+                  {copiedLink ? (
+                    <>
+                      <Check className="w-4 h-4 text-slate-950" />
+                      <span>Link Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 text-slate-950" />
+                      <span>Copiar Link Geral</span>
+                    </>
+                  )}
+                </button>
+
+                <a
+                  href={`https://api.whatsapp.com/send?text=${whatsappMessage}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors shrink-0 shadow-sm"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Enviar no Grupo</span>
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: Individual Links (Direct to participant draw) */}
+          {shareMode === 'individual' && (
+            <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 sm:p-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <p className="text-xs text-slate-300 leading-relaxed max-w-xl">
+                  🔒 <strong>Links Individuais Diretos:</strong> Cada participante recebe o seu próprio link. Ao clicar, a pessoa <strong>abre direto no seu amigo secreto</strong>, sem precisar escolher o nome na lista e sem chance de ver outros nomes!
+                </p>
+
+                {group.participants.length > 5 && (
+                  <div className="relative shrink-0 w-full sm:w-48">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={individualSearch}
+                      onChange={(e) => setIndividualSearch(e.target.value)}
+                      placeholder="Buscar pessoa..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[420px] overflow-y-auto pr-1">
+                {group.participants
+                  .filter((p) =>
+                    p.name.toLowerCase().includes(individualSearch.toLowerCase().trim())
+                  )
+                  .map((p) => {
+                    const individualUrl = getIndividualUrl(p.id);
+                    const individualMsg = encodeURIComponent(
+                      `Olá, *${p.name}*! 🎄🎁\n\n` +
+                        `Aqui está o seu link exclusivo e confidencial para o Amigo Secreto: *${group.title}*.\n\n` +
+                        `${group.minPrice || group.maxPrice ? `💰 Valor sugerido: ${group.minPrice ? formatBRL(group.minPrice) : ''} ${group.maxPrice ? `a ${formatBRL(group.maxPrice)}` : ''}\n` : ''}` +
+                        `${group.eventDate ? `📅 Data: ${formatBRDate(group.eventDate)} ${group.eventTime ? `às ${group.eventTime}` : ''}\n` : ''}` +
+                        `👉 Acesse agora para descobrir quem você tirou (sem cadastro e 100% secreto):\n${individualUrl}`
+                    );
+
+                    return (
+                      <div
+                        key={p.id}
+                        className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 transition-colors flex flex-col gap-2.5"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 truncate">
+                            <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 font-bold text-xs flex items-center justify-center shrink-0">
+                              {p.name.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="font-semibold text-white text-xs sm:text-sm truncate">
+                              {p.name}
+                            </span>
+                          </div>
+
+                          {p.isRevealed ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shrink-0">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Visualizou</span>
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 px-2 py-0.5 rounded-full bg-slate-800 shrink-0">
+                              Pendente
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Individual direct link and actions */}
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <div className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-400 font-mono truncate">
+                            {individualUrl}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleCopyIndividualLink(p)}
+                            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors shrink-0 flex items-center gap-1"
+                            title="Copiar link individual"
+                          >
+                            {copiedParticipantId === p.id ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                <span className="text-emerald-400 text-[11px]">Copiado!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5 text-slate-400" />
+                                <span className="text-[11px]">Copiar</span>
+                              </>
+                            )}
+                          </button>
+
+                          <a
+                            href={`https://api.whatsapp.com/send?text=${individualMsg}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors shrink-0 flex items-center gap-1"
+                            title="Enviar no WhatsApp desta pessoa"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            <span className="text-[11px] hidden sm:inline">WhatsApp</span>
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

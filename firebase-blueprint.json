@@ -13,6 +13,10 @@
           "type": "string",
           "description": "Secret key for group administrator"
         },
+        "adminPassword": {
+          "type": "string",
+          "description": "Password set by admin to protect dashboard access"
+        },
         "title": {
           "type": "string",
           "description": "Title of the secret santa group"

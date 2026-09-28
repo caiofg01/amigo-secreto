@@ -40,12 +40,29 @@ export default function App() {
 
       const params = new URLSearchParams(window.location.search);
       const groupId = params.get('grupo');
+      const participantId = params.get('p');
       const isAdminMode = params.get('admin') === '1';
 
       if (groupId) {
         const found = await fetchGroup(groupId);
         if (found) {
           setCurrentGroup(found);
+
+          // Check for direct individual participant link
+          if (participantId) {
+            const p = found.participants.find((item) => item.id === participantId);
+            if (p && p.secretTargetId) {
+              const target = found.participants.find((item) => item.id === p.secretTargetId);
+              if (target) {
+                setActiveParticipant(p);
+                setTargetParticipant(target);
+                setViewMode('participant_draw');
+                setIsLoading(false);
+                return;
+              }
+            }
+          }
+
           if (isAdminMode) {
             setViewMode('admin');
           } else {

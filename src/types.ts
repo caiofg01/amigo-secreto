@@ -25,6 +25,7 @@ export interface PendingRequest {
 export interface SecretGroup {
   id: string;
   adminKey: string;
+  adminPassword?: string;
   title: string;
   description?: string;
   minPrice?: number | null;
